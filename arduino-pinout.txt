@@ -3,26 +3,26 @@ Arduino Pins
 
 Digital
 
-0
-1
-2
-3
-4
-5
-6
-7
-8
-9
-10
+0	RX via RS232MAX to PC
+1	TX via RS232MAX to PC
+2	LCD D7
+3	LCD D6
+4	LCD D5
+5	LCD D4
+6	LCD Enable
+7	LCD RS
+8	LCD Backlight
+9	DS18S20 OneWire-Bus
+10	
 11
-12
-13
+12	Status LED red
+13	Status LED green
 
 Analog In
 
-0
-1
-2
-3
-4
+0	SRF02
+1	SRF02
+2	Button1
+3	Button2
+4	Button3
 5
