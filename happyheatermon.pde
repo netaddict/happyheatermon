@@ -59,18 +59,18 @@ void setup() {
   lcd.clear();
   delay(500);
 
+  // set leds
+  pinMode(12,OUTPUT);
+  pinMode(13,OUTPUT);
+  digitalWrite(12,HIGH);
+  
   // print welcome screen
-  lcd.setCursor(7,1);
-  lcd.print("Hello");
-  delay(1000);
-  lcd.setCursor(4, 2);
-  lcd.print("welcome to:");  
-  delay(1500);
   lcd.setCursor(3, 1);
   lcd.print("HappyHeaterMon");
   lcd.setCursor(4, 2);
   lcd.print("V0.01 Alpha");
   delay(3000);
+  digitalWrite(13,HIGH);
   lcd.clear();
   lcd.setCursor(2, 1);
   lcd.print("by Bjoern Knorr");
@@ -84,6 +84,9 @@ void setup() {
 
   // calculate bar graphs
   calcBargraphs();
+  
+  // turn red led off
+  digitalWrite(12,LOW);
 }
 
 void loop() {
