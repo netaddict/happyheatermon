@@ -5,9 +5,15 @@
  * include the librarys
  */
 
+// libs
 #include <LiquidCrystal.h>
 #include <Wire.h>
 #include <SRF02.h>
+
+// define section
+#define STATUSGREENLED 13
+#define STATUSREDLED 12
+#define LCDBACKLIGHT 8
 
 // init LCD (RS, Enable, D4, D5, D6, D7)
 LiquidCrystal lcd(7, 6, 5, 4, 3, 2);
@@ -26,7 +32,71 @@ unsigned long nextStart = 0;
 
 //setup function
 void setup() {
-  // define my own chars
+  // set pin modes
+  pinMode(STATUSGREENLED,OUTPUT);
+  pinMode(STATUSREDLED,OUTPUT);
+  pinMode(LCDBACKLIGHT,OUTPUT);
+  
+  statusLED(1);
+  
+  // define my own LCD chars
+  lcdDefineChars();
+
+  // a 20x4 LCD
+  lcd.begin(20, 4);
+
+  // start SRF02
+  Wire.begin();
+
+  // backlight on
+  digitalWrite(LCDBACKLIGHT,HIGH);
+
+  // print welcome screen
+  lcd.setCursor(3, 1);
+  lcd.print("HappyHeaterMon");
+  lcd.setCursor(4, 2);
+  lcd.print("V0.01 Alpha");
+  delay(2000);
+
+  // calculate bar graphs
+  calcBargraphs();
+  
+  lcd.clear();
+  statusLED(3);
+}
+
+// main loop
+void loop() {
+  SRF02::update();
+  if (millis() > nextStart) {
+    readSensors();
+    drawPellets();
+    nextStart = millis () + 1000;
+  }
+}
+
+// set status LED (0=off, 1=red, 2=yellow, 3=green)
+void statusLED(int led) {
+  if (led == 0) {
+    digitalWrite(STATUSGREENLED,LOW);
+    digitalWrite(STATUSREDLED,LOW);
+  }
+  if (led == 1) {
+    digitalWrite(STATUSGREENLED,LOW);
+    digitalWrite(STATUSREDLED,HIGH);
+  }
+  if (led == 2) {
+    digitalWrite(STATUSGREENLED,HIGH);
+    digitalWrite(STATUSREDLED,HIGH);
+  }
+  if (led == 3) {
+    digitalWrite(STATUSGREENLED,HIGH);
+    digitalWrite(STATUSREDLED,LOW);
+  }
+}
+
+// own LCD characters
+void lcdDefineChars() {
   byte mycharBlock[8] = {
     B11111,
     B11111,
@@ -48,60 +118,20 @@ void setup() {
     B01000,
   };
   lcd.createChar(1, mycharRight);
-
-  // a 20x4 lcd
-  lcd.begin(20, 4);
-
-  // backlight on
-  delay(200);
-  pinMode(8,OUTPUT);
-  digitalWrite(8,HIGH);
-  lcd.clear();
-  delay(500);
-
-  // set leds
-  pinMode(12,OUTPUT);
-  pinMode(13,OUTPUT);
-  digitalWrite(12,HIGH);
-  
-  // print welcome screen
-  lcd.setCursor(3, 1);
-  lcd.print("HappyHeaterMon");
-  lcd.setCursor(4, 2);
-  lcd.print("V0.01 Alpha");
-  delay(3000);
-  digitalWrite(13,HIGH);
-  lcd.clear();
-  lcd.setCursor(2, 1);
-  lcd.print("by Bjoern Knorr");
-  lcd.setCursor(0, 2);
-  lcd.print("http://netaddict.de/");
-  delay(4000);
-  lcd.clear();
-
-  // start SRF02
-  Wire.begin();
-
-  // calculate bar graphs
-  calcBargraphs();
-  
-  // turn red led off
-  digitalWrite(12,LOW);
-}
-
-void loop() {
-  SRF02::update();
-  if (millis() > nextStart) {
-    readSensors();
-    drawPellets();
-    nextStart = millis () + 1000;
-  }
 }
 
 // read in all sesors and store the values into the variables
 void readSensors(){
   sensorPellet = sensor.read();
 }
+
+// draw the main page
+
+// draw the heater page
+
+// draw the solar circuit page
+
+// draw the radiator circuit page
 
 // draw the pellet page
 void drawPellets() {
@@ -118,6 +148,17 @@ void drawPellets() {
     lcd.setCursor(i, 1);
     lcd.write(0);
   }
+}
+
+// draw credits page
+void printCredits() {
+  lcd.clear();
+  lcd.setCursor(2, 1);
+  lcd.print("by Bjoern Knorr");
+  lcd.setCursor(0, 2);
+  lcd.print("http://netaddict.de/");
+  delay(4000);
+  lcd.clear();
 }
 
 // calculate bar graphs
