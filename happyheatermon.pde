@@ -13,10 +13,18 @@
 // define section
 #define STATUSGREENLED 13
 #define STATUSREDLED 12
+#define LCDRS 7
+#define LCDENABLE 6
+#define LCDDATA4 5
+#define LCDDATA5 4
+#define LCDDATA6 3
+#define LCDDATA7 2
 #define LCDBACKLIGHT 8
+#define LCDWIDTH 20
+#define LCDHEIGHT 4
 
-// init LCD (RS, Enable, D4, D5, D6, D7)
-LiquidCrystal lcd(7, 6, 5, 4, 3, 2);
+// init LCD
+LiquidCrystal lcd(LCDRS, LCDENABLE, LCDDATA4, LCDDATA5, LCDDATA6, LCDDATA7);
 
 // init SRF02 sensor
 SRF02 sensor(0x70, SRF02_CENTIMETERS);
@@ -38,12 +46,12 @@ void setup() {
   pinMode(LCDBACKLIGHT,OUTPUT);
   
   statusLED(1);
-  
-  // define my own LCD chars
-  lcdDefineChars();
 
   // a 20x4 LCD
-  lcd.begin(20, 4);
+  lcd.begin(LCDWIDTH, LCDHEIGHT);
+
+  // define my own LCD chars
+  lcdDefineChars();
 
   // start SRF02
   Wire.begin();
@@ -69,8 +77,8 @@ void setup() {
 void loop() {
   SRF02::update();
   if (millis() > nextStart) {
-    readSensors();
-    drawPellets();
+    //readSensors();
+    drawMain();
     nextStart = millis () + 1000;
   }
 }
@@ -108,24 +116,63 @@ void lcdDefineChars() {
   };
   lcd.createChar(0, mycharBlock);
 
-  byte mycharRight[8] = {
-    B01000,
-    B01100,
+  byte mycharSmile[8] = {
+    B00000,
+    B00000,
+    B01010,
+    B00000,
+    B10001,
+    B01110,
+    B00000,
+  };
+  lcd.createChar(1, mycharSmile);
+
+  byte mycharFrown[8] = {
+    B00000,
+    B00000,
+    B00000,
+    B00000,
+    B00000,
+    B00000,
+    B00000,
+  };
+  lcd.createChar(2, mycharFrown);
+
+  byte mycharTabLeft[8] = {
+    B00011,
+    B01111,
+    B11111,
+    B11111,
+    B11111,
+    B11111,
+    B11111,
+  };
+  lcd.createChar(3, mycharTabLeft);
+  
+    byte mycharTabRight[8] = {
+    B11000,
     B11110,
     B11111,
-    B11110,
-    B01100,
-    B01000,
+    B11111,
+    B11111,
+    B11111,
+    B11111,
   };
-  lcd.createChar(1, mycharRight);
-}
-
-// read in all sesors and store the values into the variables
-void readSensors(){
-  sensorPellet = sensor.read();
+  lcd.createChar(4, mycharTabRight);
 }
 
 // draw the main page
+void drawMain() {
+  drawMenu(0, "Status");
+  lcd.setCursor(0, 1);
+  lcd.print("Puffer");
+  lcd.setCursor(8, 1);
+  lcd.write(1);
+  lcd.setCursor(0, 2);
+  lcd.print("Pellets");
+  lcd.setCursor(0, 3);
+  lcd.print("Blubb");
+}
 
 // draw the heater page
 
@@ -135,8 +182,6 @@ void readSensors(){
 
 // draw the pellet page
 void drawPellets() {
-  lcd.setCursor(2, 3);
-  lcd.print(sensorPellet);
   lcd.setCursor(0, 0);
   lcd.print("Pelletvorrat im Ofen");
   lcd.setCursor(0, 1);
@@ -159,6 +204,27 @@ void printCredits() {
   lcd.print("http://netaddict.de/");
   delay(4000);
   lcd.clear();
+}
+
+// draw menu bar
+void drawMenu(int menu, char title[6]) {
+  lcd.setCursor(0, 0);
+  //lcd.write(3);
+  //lcd.setCursor(1, 0);
+  for (int i=0; i<7; i++) {
+    lcd.write(3);
+    if (i == menu) {
+      lcd.print(title);
+    }
+    lcd.write(4);
+  }
+}
+
+// read in all sesors and store the values into the variables
+void readSensors(){
+  statusLED(2);
+  sensorPellet = sensor.read();
+  statusLED(3);
 }
 
 // calculate bar graphs
