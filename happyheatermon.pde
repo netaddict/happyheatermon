@@ -2,7 +2,6 @@
  * HappyHeaterMon
  * by Bjoern Knorr 2009
  * http://netaddict.de/wiki/mikrocontroller:happyheatermon
- * include the librarys
  */
 
 // libs
@@ -10,7 +9,7 @@
 #include <Wire.h>
 #include <SRF02.h>
 
-// define section
+// define pins
 #define STATUSGREENLED 13
 #define STATUSREDLED 12
 #define LCDRS 7
@@ -20,6 +19,13 @@
 #define LCDDATA6 3
 #define LCDDATA7 2
 #define LCDBACKLIGHT 8
+#define BUTTONOK 10
+#define BUTTONHORZ 0
+#define BUTTONVERT 1
+
+#define BUTTONDEBOUNCETIME 25
+#define BUTTONPRESSEDTIME 250
+
 #define LCDWIDTH 20
 #define LCDHEIGHT 4
 
@@ -36,7 +42,12 @@ int pelletMax = 500;
 // globar vars
 int sensorPellet;
 int pelletBarUnits;
-unsigned long nextStart = 0;
+int buttonHorzState = 0;
+int buttonOkState = 0;
+int buttonVertState = 0;
+unsigned long timer0 = 0;
+unsigned long timer1 = 0;
+int menu = 0;
 
 //setup function
 void setup() {
@@ -44,6 +55,8 @@ void setup() {
   pinMode(STATUSGREENLED,OUTPUT);
   pinMode(STATUSREDLED,OUTPUT);
   pinMode(LCDBACKLIGHT,OUTPUT);
+  pinMode(BUTTONOK,INPUT);
+  digitalWrite(BUTTONOK,HIGH);
   
   statusLED(1);
 
@@ -76,10 +89,11 @@ void setup() {
 // main loop
 void loop() {
   SRF02::update();
-  if (millis() > nextStart) {
+  getButtons();
+   
+  if (millis() > timer0) {
     //readSensors();
-    drawMain();
-    nextStart = millis () + 1000;
+    timer0 = millis() + 50;
   }
 }
 
@@ -101,6 +115,60 @@ void statusLED(int led) {
     digitalWrite(STATUSGREENLED,HIGH);
     digitalWrite(STATUSREDLED,LOW);
   }
+}
+
+// get the button states
+void getButtons() {
+  // debounce
+  if (millis() < timer1) {
+    return;
+  }
+  
+  // Read Buttons
+  int buttonHorzTmp = analogRead(BUTTONHORZ);
+  int buttonVertTmp = analogRead(BUTTONVERT);
+  int buttonOkTmp = digitalRead(BUTTONOK);
+
+  // Horizontal
+  if (buttonHorzState != buttonHorzTmp) {
+    buttonHorzState = buttonHorzTmp;
+    timer1 = millis()+BUTTONDEBOUNCETIME;
+  };
+ 
+  // Vertical
+  if (buttonVertState != buttonVertTmp) {
+    buttonVertState = buttonVertTmp;
+    timer1 = millis()+BUTTONDEBOUNCETIME;
+    
+    // Menu back
+    if (buttonVertState < 100) {
+      if (menu == 0) {
+        menu = 6;
+      }
+      else {
+        menu--;
+      }
+      timer1 = millis()+BUTTONPRESSEDTIME;
+    }
+    
+    // Menu forward
+    if (buttonVertState > 900) {
+      if (menu == 6) {
+        menu = 0;
+      }
+      else {
+        menu++;
+      }
+      timer1 = millis()+BUTTONPRESSEDTIME;
+    }
+  };
+  
+  // OK
+  if (buttonOkState != buttonOkTmp) {
+    buttonOkState = buttonOkTmp;
+    timer1 = millis()+BUTTONDEBOUNCETIME;
+  };
+
 }
 
 // own LCD characters
@@ -130,10 +198,10 @@ void lcdDefineChars() {
   byte mycharFrown[8] = {
     B00000,
     B00000,
+    B01010,
     B00000,
-    B00000,
-    B00000,
-    B00000,
+    B01110,
+    B10001,
     B00000,
   };
   lcd.createChar(2, mycharFrown);
@@ -161,17 +229,28 @@ void lcdDefineChars() {
   lcd.createChar(4, mycharTabRight);
 }
 
-// draw the main page
-void drawMain() {
-  drawMenu(0, "Status");
+// draw the status page
+void drawStatus() {
+  drawMenu(menu, "Status");
   lcd.setCursor(0, 1);
   lcd.print("Puffer");
-  lcd.setCursor(8, 1);
-  lcd.write(1);
   lcd.setCursor(0, 2);
-  lcd.print("Pellets");
+  lcd.print("Pellet");
   lcd.setCursor(0, 3);
-  lcd.print("Blubb");
+  lcd.print("Ofen");
+  lcd.setCursor(9, 1); 
+  lcd.print("|");
+  lcd.setCursor(9, 2); 
+  lcd.print("|");
+  lcd.setCursor(9, 3); 
+  lcd.print("|");
+  lcd.setCursor(10, 1); 
+  lcd.print("Solar");
+  lcd.setCursor(10, 2); 
+  lcd.print("Heizung");
+  lcd.setCursor(10,3);
+  lcd.print(" ");
+  lcd.print("   ");
 }
 
 // draw the heater page
@@ -209,8 +288,6 @@ void printCredits() {
 // draw menu bar
 void drawMenu(int menu, char title[6]) {
   lcd.setCursor(0, 0);
-  //lcd.write(3);
-  //lcd.setCursor(1, 0);
   for (int i=0; i<7; i++) {
     lcd.write(3);
     if (i == menu) {

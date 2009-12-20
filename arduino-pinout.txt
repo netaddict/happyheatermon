@@ -14,7 +14,7 @@ Digital
 8	LCD Backlight
 9	DS18S20 OneWire-Bus
 10	Piepser
-11
+11	Button OK
 12	Status LED red
 13	Status LED green
 
@@ -22,7 +22,7 @@ Analog In
 
 0	SRF02
 1	SRF02
-2	Button1
-3	Button2
-4	Button3
-5	Fotozelle
+2	Joystick Horizontal
+3	Joystick Vertical
+4	Motor Sensor 1
+5	Motor Sensor 2
